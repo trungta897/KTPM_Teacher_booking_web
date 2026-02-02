@@ -14,7 +14,7 @@
                         <p class="mt-1 text-sm text-gray-600">{{ $tutorProfile->bio }}</p>
                         <p class="mt-1 text-sm text-gray-600"><strong>Experience:</strong> {{ $tutorProfile->experience }}</p>
                         <p class="mt-1 text-sm text-gray-600"><strong>Qualifications:</strong> {{ $tutorProfile->qualifications }}</p>
-                        <p class="mt-1 text-sm text-gray-600"><strong>Hourly Rate:</strong> ${{ $tutorProfile->hourly_rate }}</p>
+                        <p class="mt-1 text-sm text-gray-600"><strong>Hourly Rate:</strong> {{ formatCurrency($tutorProfile->hourly_rate) }}{{ __('tutors.per_hour') }}</p>
                         <p class="mt-1 text-sm text-gray-600"><strong>Location Preference:</strong> {{ $tutorProfile->location_preference }}</p>
                         <div class="mt-4">
                             <a href="{{ route('tutor.profile.edit') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-blue-600 uppercase tracking-widest hover:bg-gray-700">

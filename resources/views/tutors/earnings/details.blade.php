@@ -159,7 +159,7 @@
                                                 <span class="badge badge-info">{{ $booking->subject->name }}</span>
                                             </td>
                                             <td>{{ $booking->duration }} {{ __('common.minutes') }}</td>
-                                            <td class="font-weight-bold">{{ number_format($booking->price, 0, ',', '.') }} VND</td>
+                                            <td class="font-weight-bold">{{ formatBookingAmount($booking) }}</td>
                                             <td class="text-warning">{{ $booking->formatted_platform_fee }}</td>
                                             <td class="text-success font-weight-bold">{{ $booking->formatted_tutor_earnings }}</td>
                                             <td>
@@ -173,8 +173,14 @@
                                 <tfoot class="thead-light">
                                     <tr>
                                         <th colspan="5" class="text-right">{{ __('common.totals') }}</th>
+                                        @php
+                                            $totalBookingPrice = $eligibleBookings->sum(function($b) {
+                                                $price = (float) $b->price;
+                                                return ($price <= 1000 && $price > 0) ? $price * 25000 : $price;
+                                            });
+                                        @endphp
                                         <th class="font-weight-bold">
-                                            {{ number_format($eligibleBookings->sum('price'), 0, ',', '.') }} VND
+                                            {{ number_format($totalBookingPrice, 0, ',', '.') }} VND
                                         </th>
                                         <th class="text-warning font-weight-bold">
                                             {{ number_format($eligibleBookings->sum('platform_fee_amount'), 0, ',', '.') }} VND

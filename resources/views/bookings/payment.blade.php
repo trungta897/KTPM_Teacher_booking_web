@@ -284,8 +284,11 @@
                             <div id="vnpay-form" class="payment-form hidden">
                                 <!-- VNPay Minimum Amount Notice (if needed) -->
                                 @php
-                                    $bookingAmount = (float) $booking->price;
-                                    $vnpayMinimum = 5000; // Updated to correct VNPay minimum
+                                    // Smart USD/VND detection for booking amount
+                                    $rawAmount = (float) $booking->price;
+                                    // If amount <= 1000, assume it's USD and convert to VND
+                                    $bookingAmount = ($rawAmount <= 1000 && $rawAmount > 0) ? $rawAmount * 25000 : $rawAmount;
+                                    $vnpayMinimum = 5000; // VNPay minimum in VND
                                     $needsMinimumAdjustment = $bookingAmount < $vnpayMinimum;
                                 @endphp
 
@@ -386,6 +389,9 @@
     @push('scripts')
     <script>
         let selectedPaymentMethod = null;
+        // Smart USD/VND detection: if price <= 1000, it's USD, convert to VND
+        const BOOKING_AMOUNT_VND = {{ (float) $booking->price <= 1000 ? (float) $booking->price * 25000 : (float) $booking->price }};
+        const VNPAY_BLOCKED = BOOKING_AMOUNT_VND < 5000;
 
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
@@ -402,14 +408,8 @@
                 card.addEventListener('click', function() {
                     const method = this.dataset.method;
 
-                    // Check VNPay minimum amount restriction
-                    @php
-                        $bookingAmount = (float) $booking->price;
-                        $vnpayMinimum = 5000;
-                        $isVnpayBlocked = $bookingAmount < $vnpayMinimum;
-                    @endphp
-
-                    if (method === 'vnpay' && {{ $isVnpayBlocked ? 'true' : 'false' }}) {
+                    // Check VNPay minimum amount restriction (minimum 5000 VND)
+                    if (method === 'vnpay' && VNPAY_BLOCKED) {
                         showError('Số tiền booking quá nhỏ để thanh toán qua VNPay. Vui lòng chọn Stripe.');
                         return;
                     }
@@ -478,23 +478,13 @@
 
                 // Show confirmation dialog
                 if (confirm('Bạn có chắc chắn muốn hủy thanh toán? Bạn có thể quay lại thanh toán sau.')) {
-
-                    // Redirect to student dashboard
-                    @auth
-                        @if(auth()->user()->role === 'student')
-                            window.location.href = '{{ route("student.dashboard") }}';
-                        @else
-                            window.location.href = '{{ route("bookings.show", $booking) }}';
-                        @endif
-                    @else
-                        window.location.href = '{{ route("bookings.index") }}';
-                    @endauth
+                    // Redirect to appropriate page
+                    window.location.href = '{!! auth()->check() ? (auth()->user()->role === "student" ? route("student.dashboard") : route("bookings.show", $booking)) : route("bookings.index") !!}';
                 }
             });
 
-                                                                                                function processVNPayPayment() {
-
-                fetch(`/web_booking/public/bookings/{{ $booking->id }}/payment/process`, {
+            function processVNPayPayment() {
+                fetch('{{ route("payments.process", $booking) }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -584,16 +574,11 @@
                 document.getElementById('spinner').classList.add('hidden');
             }
 
-            // Auto-select appropriate payment method
-            @php
-                $bookingAmount = (float) $booking->price;
-                $vnpayMinimum = 5000;
-                $isVnpayBlocked = $bookingAmount < $vnpayMinimum;
-            @endphp
+            // Auto-select appropriate payment method (VNPay minimum 5000 VND)
+            const vnpayCard = document.querySelector('[data-method="vnpay"]');
 
-            @if($isVnpayBlocked)
+            if (VNPAY_BLOCKED) {
                 // VNPay is blocked, disable it and auto-select Stripe
-                const vnpayCard = document.querySelector('[data-method="vnpay"]');
                 if (vnpayCard) {
                     vnpayCard.classList.add('opacity-50', 'cursor-not-allowed');
                     vnpayCard.classList.remove('cursor-pointer', 'hover:border-blue-500');
@@ -603,13 +588,12 @@
                 if (stripeCard) {
                     setTimeout(() => stripeCard.click(), 100);
                 }
-            @else
+            } else {
                 // Auto-select VNPay for Vietnamese users when amount is sufficient
-                const vnpayCard = document.querySelector('[data-method="vnpay"]');
                 if (vnpayCard) {
                     setTimeout(() => vnpayCard.click(), 100);
                 }
-            @endif
+            }
         });
     </script>
     @endpush

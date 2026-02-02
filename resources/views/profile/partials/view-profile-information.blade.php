@@ -28,7 +28,7 @@
                  @if ($tutor)
                     <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
                         <dt class="text-sm font-medium text-gray-500">{{ __('tutors.hourly_rate') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ number_format($tutor->hourly_rate ?? 0, 0, ',', '.') }} VND</dd>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ formatCurrency($tutor->hourly_rate ?? 0) }}{{ __('tutors.per_hour') }}</dd>
                     </div>
                     <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
                         <dt class="text-sm font-medium text-gray-500">{{ __('tutors.bio') }}</dt>
@@ -87,7 +87,10 @@
                                                 <img src="{{ asset('uploads/education/' . $imageName) }}"
                                                      alt="Certificate {{ $index + 1 }}"
                                                      class="certificate-image h-20 w-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-all duration-300"
-                                                     onclick="openImageModal('{{ asset('uploads/education/' . $imageName) }}', '{{ $education->degree }}', '{{ $education->institution }} - {{ $education->year }}')" />
+                                                     data-image-url="{{ asset('uploads/education/' . $imageName) }}"
+                                                     data-degree="{{ e($education->degree) }}"
+                                                     data-info="{{ e($education->institution . ' - ' . $education->year) }}"
+                                                     onclick="openImageModal(this.dataset.imageUrl, this.dataset.degree, this.dataset.info)" />
                                                 <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-md pointer-events-none">
                                                     <svg class="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z M15 15l-2-2m0 0l-2-2m2 2l2-2m-2 2l-2 2"></path>

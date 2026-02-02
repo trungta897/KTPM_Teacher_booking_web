@@ -95,22 +95,8 @@ class BookingService extends BaseService
             }
 
             // Calculate price based on duration and tutor's hourly rate
-            $startTime = Carbon::parse($data['start_time']);
-            $endTime = Carbon::parse($data['end_time']);
-
-            // Ensure end time is after start time
-            if ($endTime->lte($startTime)) {
-                throw new Exception(__('booking.validation.end_time_must_be_after_start_time'));
-            }
-
-            $duration = $startTime->diffInMinutes($endTime); // Correct order: start->diffInMinutes(end)
-            $hours = $duration / 60;
-            $price = $hours * $tutor->hourly_rate;
-
-            // Ensure price is positive
-            if ($price <= 0) {
-                throw new Exception(__('booking.validation.invalid_price_calculation'));
-            }
+            // Uses calculateBookingPrice which handles USD to VND conversion
+            $price = $this->calculateBookingPrice($tutor, $data['start_time'], $data['end_time']);
 
             // Create booking
             $booking = new Booking();
@@ -357,6 +343,7 @@ class BookingService extends BaseService
 
     /**
      * Calculate booking price.
+     * Converts USD hourly rate to VND for storage.
      */
     protected function calculateBookingPrice(Tutor $tutor, string $startTime, string $endTime): float
     {
@@ -374,17 +361,29 @@ class BookingService extends BaseService
         // Convert to hours (more precise calculation)
         $hours = $duration / 60.0;
 
-        // FIXED: Always use tutor's hourly rate as VND directly
-        // No currency conversion in calculation
-        $hourlyRateVND = (float) $tutor->hourly_rate;
+        // Get hourly rate and convert to VND if needed
+        // If hourly_rate <= 1000, it's stored in USD and needs conversion
+        // If hourly_rate > 1000, it's already in VND
+        $hourlyRate = (float) $tutor->hourly_rate;
+        $usdToVndRate = 25000;
+
+        if ($hourlyRate <= 1000) {
+            // Rate is in USD, convert to VND
+            $hourlyRateVND = $hourlyRate * $usdToVndRate;
+        } else {
+            // Rate is already in VND
+            $hourlyRateVND = $hourlyRate;
+        }
+
         $totalPriceVND = $hours * $hourlyRateVND;
 
         // Log for debugging price calculation issues
-        Log::debug('Booking price calculation FIXED', [
+        Log::debug('Booking price calculation', [
             'start_time' => $startTime,
             'end_time' => $endTime,
             'duration_minutes' => $duration,
             'duration_hours' => $hours,
+            'hourly_rate_stored' => $hourlyRate,
             'hourly_rate_vnd' => $hourlyRateVND,
             'calculated_price_vnd' => $totalPriceVND,
         ]);
@@ -394,8 +393,8 @@ class BookingService extends BaseService
             throw new Exception(__('booking.validation.invalid_price_calculation'));
         }
 
-        // Round to 2 decimal places to avoid floating point issues
-        return round($totalPriceVND, 2);
+        // Round to 0 decimal places for VND (no cents)
+        return round($totalPriceVND, 0);
     }
 
     /**
