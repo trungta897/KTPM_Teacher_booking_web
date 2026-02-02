@@ -463,26 +463,27 @@ class VnpayService
 
     /**
      * Calculate VND amount from booking price.
+     * Smart detection: if price <= 1000, assume it's USD and convert to VND.
      */
     private function calculateVndAmount(Booking $booking): float
     {
-        $currency = $booking->currency ?? 'VND';
         $amount = (float) $booking->price;
+
+        // Smart detection: If amount <= 1000, it's likely USD
+        // If amount > 1000, it's likely already VND
+        $isLikelyUSD = $amount <= 1000 && $amount > 0;
 
         // Log for debugging
         LogService::vnpay('Amount calculation', [
             'booking_id' => $booking->id,
             'original_amount' => $amount,
-            'currency' => $currency,
+            'is_likely_usd' => $isLikelyUSD,
             'price_type' => gettype($booking->price),
         ]);
 
-        // Simplified logic:
-        // If currency is USD, convert to VND
-        // Otherwise, assume it's already VND
-        if ($currency === 'USD') {
+        if ($isLikelyUSD) {
             $vndAmount = $amount * 25000; // Convert USD to VND
-            LogService::vnpay('Converting USD to VND', [
+            LogService::vnpay('Converting USD to VND (smart detection)', [
                 'usd_amount' => $amount,
                 'vnd_amount' => $vndAmount,
                 'exchange_rate' => 25000,
@@ -491,11 +492,9 @@ class VnpayService
             return $vndAmount;
         }
 
-        // For VND currency or no currency specified, use amount as-is
-        // The amount should already be in VND
+        // Amount is already in VND
         LogService::vnpay('Using amount as VND', [
             'vnd_amount' => $amount,
-            'currency' => $currency,
         ]);
 
         return $amount;

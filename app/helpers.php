@@ -62,7 +62,9 @@ if (!function_exists('getTutorCard')) {
 
 if (!function_exists('formatCurrency')) {
     /**
-     * Format currency for display - always show VND for Vietnamese locale.
+     * Format currency for display with smart USD/VND detection.
+     * If amount <= 1000, assume it's USD and convert to VND for Vietnamese locale.
+     * If amount > 1000, assume it's already VND.
      */
     function formatCurrency($amount, $currency = 'VND'): string
     {
@@ -75,19 +77,28 @@ if (!function_exists('formatCurrency')) {
         // Convert amount to float to handle any data type
         $amount = (float) $amount;
 
-        // For Vietnamese locale, ALWAYS show VND regardless of amount
+        // Smart detection: If amount <= 1000, it's likely USD
+        // If amount > 1000, it's likely already VND
+        $isLikelyUSD = $amount <= 1000 && $amount > 0;
+
         if ($locale === 'vi') {
-            return number_format($amount, 0, ',', '.') . ' VND';
+            if ($isLikelyUSD) {
+                // Convert USD to VND for Vietnamese display
+                $vndAmount = $amount * 25000;
+                return number_format($vndAmount, 0, ',', '.') . ' VND';
+            } else {
+                // Already VND, display as-is
+                return number_format($amount, 0, ',', '.') . ' VND';
+            }
         } else {
-            // For English locale, convert VND to USD if amount is large
-            if ($amount > 1000) {
+            // English locale
+            if ($isLikelyUSD) {
+                // Display USD as-is
+                return '$' . number_format($amount, 2);
+            } else {
                 // Convert VND to USD for display
                 $usdAmount = $amount / 25000;
-
                 return '$' . number_format($usdAmount, 2);
-            } else {
-                // Already USD
-                return '$' . number_format($amount, 2);
             }
         }
     }
@@ -95,7 +106,9 @@ if (!function_exists('formatCurrency')) {
 
 if (!function_exists('formatBookingAmount')) {
     /**
-     * Format booking amount - ALWAYS use stored price directly, no currency conversion.
+     * Format booking amount with smart USD/VND detection.
+     * If amount <= 1000, assume it's USD (old bookings) and convert to VND.
+     * If amount > 1000, assume it's already VND (new bookings).
      */
     function formatBookingAmount(\App\Models\Booking $booking): string
     {
@@ -116,15 +129,29 @@ if (!function_exists('formatBookingAmount')) {
             $locale = config('app.locale', 'vi');
         }
 
-        // FIXED: ALWAYS display stored amount as VND for Vietnamese
-        // NO MORE USD/VND conversion confusion
-        if ($locale === 'vi') {
-            return number_format($amount, 0, ',', '.') . ' VND';
-        } else {
-            // For English: show USD equivalent for display only
-            $usdAmount = $amount / 25000;
+        // Smart detection: If amount <= 1000, it's likely USD (old booking)
+        // If amount > 1000, it's likely already VND (new booking)
+        $isLikelyUSD = $amount <= 1000 && $amount > 0;
 
-            return '$' . number_format($usdAmount, 2);
+        if ($locale === 'vi') {
+            if ($isLikelyUSD) {
+                // Convert USD to VND for Vietnamese display
+                $vndAmount = $amount * 25000;
+                return number_format($vndAmount, 0, ',', '.') . ' VND';
+            } else {
+                // Already VND, display as-is
+                return number_format($amount, 0, ',', '.') . ' VND';
+            }
+        } else {
+            // English locale
+            if ($isLikelyUSD) {
+                // Display USD as-is
+                return '$' . number_format($amount, 2);
+            } else {
+                // Convert VND to USD for display
+                $usdAmount = $amount / 25000;
+                return '$' . number_format($usdAmount, 2);
+            }
         }
     }
 }
@@ -200,7 +227,7 @@ if (!function_exists('formatDateForDisplay')) {
         if ($locale === 'vi' && str_contains($format, 'D')) {
             $englishDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             $vietnameseDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-            
+
             $formatted = $date->format($format);
             return str_replace($englishDays, $vietnameseDays, $formatted);
         }

@@ -92,7 +92,7 @@
                                                 {{ ucfirst($booking->status) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${{ number_format($booking->price, 2) }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ formatCurrency($booking->price) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

@@ -63,7 +63,7 @@
 
                                         <div class="flex justify-between items-center">
                                             <span class="text-lg font-semibold text-gray-900">
-                                                ${{ number_format($tutor->hourly_rate, 2) }}/hr
+                                                {{ formatCurrency($tutor->hourly_rate) }}{{ __('tutors.per_hour') }}
                                             </span>
                                             <a href="{{ route('tutors.show', $tutor) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-blue-600 uppercase tracking-widest hover:bg-blue-700">
                                                 View Profile

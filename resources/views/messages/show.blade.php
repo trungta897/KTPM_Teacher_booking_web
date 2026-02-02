@@ -85,7 +85,7 @@
                                     </p>
                                     <p class="text-sm text-gray-600">
                                         <span class="font-medium">Hourly Rate:</span>
-                                        ${{ $user->tutor->hourly_rate }}/hour
+                                        {{ formatCurrency($user->tutor->hourly_rate) }}{{ __('tutors.per_hour') }}
                                     </p>
                                     <div class="mt-2">
                                         <a href="{{ route('tutors.show', $user->tutor) }}" class="text-sm text-indigo-600 hover:text-indigo-500">
@@ -106,7 +106,7 @@
         </div>
     </div>
 
-    
+
 
     @push('scripts')
         <script src="{{ asset('js/pages/messages-show.js') }}"></script>

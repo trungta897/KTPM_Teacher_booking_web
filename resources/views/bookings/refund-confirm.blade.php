@@ -32,7 +32,7 @@
                             </div>
                             <div>
                                 <span class="font-medium">{{ __('booking.price') }}:</span>
-                                <span class="text-green-600 font-semibold">{{ number_format($booking->price, 0, ',', '.') }} VND</span>
+                                <span class="text-green-600 font-semibold">{{ formatBookingAmount($booking) }}</span>
                             </div>
                             <div>
                                 <span class="font-medium">{{ __('booking.payment_status') }}:</span>
@@ -83,7 +83,7 @@
                                     <span class="ml-3">
                                         <span class="font-medium">{{ __('booking.full_refund') }}</span>
                                         <span class="text-gray-500 text-sm block">
-                                            {{ __('booking.full_refund_desc') }} ({{ number_format($booking->price, 0, ',', '.') }} VND)
+                                            {{ __('booking.full_refund_desc') }} ({{ formatBookingAmount($booking) }})
                                         </span>
                                     </span>
                                 </label>
@@ -102,6 +102,10 @@
                         </div>
 
                         <!-- Partial Refund Amount (hidden by default) -->
+                        @php
+                            $rawPrice = (float) $booking->price;
+                            $maxVND = ($rawPrice <= 1000 && $rawPrice > 0) ? $rawPrice * 25000 : $rawPrice;
+                        @endphp
                         <div id="partialRefundSection" class="mb-6 hidden">
                             <label for="refund_amount" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ __('booking.refund_amount') }} (VND) <span class="text-red-500">*</span>
@@ -113,14 +117,14 @@
                                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                        placeholder="Nhập số tiền hoàn..."
                                        min="1000"
-                                       max="{{ $booking->price }}"
+                                       max="{{ $maxVND }}"
                                        step="1000">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm">VND</span>
                                 </div>
                             </div>
                             <p class="mt-1 text-sm text-gray-500">
-                                {{ __('booking.refund_amount_help', ['min' => '1,000', 'max' => number_format($booking->price, 0, ',', '.')]) }}
+                                {{ __('booking.refund_amount_help', ['min' => '1,000', 'max' => number_format($maxVND, 0, ',', '.')]) }}
                             </p>
                             @error('refund_amount')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -179,7 +183,7 @@
         </div>
     </div>
 
-    
+
 
     @push('scripts')
         <script src="{{ asset('js/pages/bookings-refund-confirm.js') }}"></script>
